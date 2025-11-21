@@ -1,21 +1,48 @@
-# Simple Makefile for Perl Plot Project
+# Perl Makefile for Plot::Generator project
+# Supports local development + Podman adapter builds
 
-# Name of the generated output file
-OUTPUT = output.png
+# Perl interpreter (Podman adapter can override this)
+PERL        := perl
+PROVE       := prove
+CARTON      := carton
+
+# Directories
+LIB_DIR     := lib
+BIN_DIR     := bin
+TEST_DIR    := t
+DATA_DIR    := data
 
 # Default target
-all: $(OUTPUT)
+.PHONY: all
+all: build test
 
-# How to build the PNG
-$(OUTPUT): plot.pl
-	@echo "Running plot script..."
-	@perl plot.pl
-	@echo "Done."
+# --------------------------------------------------------
+# Install dependencies using Carton (Perl's dep manager)
+# --------------------------------------------------------
+.PHONY: install
+install:
+	@if [ -f cpanfile ]; then \
+		echo "Installing dependencies via Carton..."; \
+		$(CARTON) install; \
+	else \
+		echo "No cpanfile found. Skipping dependency install."; \
+	fi
 
-# Remove generated files
-clean:
-	@echo "Cleaning..."
-	@rm -f $(OUTPUT)
-	@echo "Clean complete."
+# --------------------------------------------------------
+# Build (noop for Perl, but kept for consistency)
+# --------------------------------------------------------
+.PHONY: build
+build: install
+	@echo "Build step complete (Perl project)."
 
-.PHONY: all clean
+# --------------------------------------------------------
+# Run unit tests (t/*.t)
+# --------------------------------------------------------
+.PHONY: test
+test:
+	@if [ -d $(TEST_DIR) ]; then \
+		echo "Running Perl unit tests..."; \
+		$(PROVE) -I$(LIB_DIR) $(TEST_DIR); \
+	else \
+		echo "No test directory found. Skipping.
+
