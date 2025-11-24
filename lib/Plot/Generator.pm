@@ -4,32 +4,11 @@ use warnings;
 use Carp qw(croak);
 use GD::Graph::lines;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 NAME
 
 Plot::Generator - Generate line plots (PNG) from numeric datasets
-
-=head1 SYNOPSIS
-
-  use Plot::Generator;
-  my $pg = Plot::Generator->new(
-      title => "CPU Usage Over Time",
-      x_label => "Time",
-      y_label => "CPU (%)",
-  );
-
-  $pg->generate(
-      x => \@timestamps,
-      y => \@cpu_values,
-      output => "cpu.png"
-  );
-
-=head1 DESCRIPTION
-
-This module provides a generic interface for creating
-PNG line plots from two numerical arrays. It performs
-basic validation, formatting, and rendering.
 
 =cut
 
@@ -37,22 +16,33 @@ sub new {
     my ($class, %args) = @_;
 
     my $self = {
-        title   => $args{title}   // '',
-        x_label => $args{x_label} // 'X',
-        y_label => $args{y_label} // 'Y',
-        width   => $args{width}   // 800,
-        height  => $args{height}  // 600,
+        title         => $args{title}         // '',
+        x_label       => $args{x_label}       // 'X',
+        y_label       => $args{y_label}       // 'Y',
+        width         => $args{width}         // 800,
+        height        => $args{height}        // 600,
+        graph_options => $args{graph_options} // {},  # extra GD::Graph options
     };
 
     return bless $self, $class;
 }
 
-sub generate {
+=head2 generate_png_data
+
+  my $png = $pg->generate_png_data(
+      x => \@x,
+      y => \@y,
+  );
+
+Returns raw PNG bytes (scalar string). Does NOT touch the filesystem.
+
+=cut
+
+sub generate_png_data {
     my ($self, %args) = @_;
 
-    my $x = $args{x}       or croak "Missing required parameter: x";
-    my $y = $args{y}       or croak "Missing required parameter: y";
-    my $output = $args{output} or croak "Missing required parameter: output";
+    my $x = $args{x} or croak "Missing required parameter: x";
+    my $y = $args{y} or croak "Missing required parameter: y";
 
     croak "x and y must be ARRAYREFs"
         unless ref($x) eq 'ARRAY' && ref($y) eq 'ARRAY';
@@ -64,35 +54,45 @@ sub generate {
 
     my $graph = GD::Graph::lines->new($self->{width}, $self->{height});
     $graph->set(
-        x_label => $self->{x_label},
-        y_label => $self->{y_label},
-        title   => $self->{title},
+        x_label   => $self->{x_label},
+        y_label   => $self->{y_label},
+        title     => $self->{title},
         line_width => 2,
         dclrs      => ["blue"],
+        %{ $self->{graph_options} || {} },  # allow custom options
     ) or croak $graph->error;
 
     my $gd = $graph->plot(\@data)
         or croak $graph->error;
 
+    return $gd->png;
+}
+
+=head2 generate
+
+  $pg->generate(
+      x      => \@x,
+      y      => \@y,
+      output => "out.png",
+  );
+
+Keeps the old behavior: writes PNG to a file.
+
+=cut
+
+sub generate {
+    my ($self, %args) = @_;
+
+    my $output = $args{output} or croak "Missing required parameter: output";
+
+    my $png_data = $self->generate_png_data(%args);
+
     open(my $fh, '>', $output) or croak "Cannot open $output: $!";
     binmode $fh;
-    print $fh $gd->png;
+    print $fh $png_data;
     close $fh;
 
     return $output;
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Your Name <you@example.com>
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright (c) 2024.
-
-=cut
-

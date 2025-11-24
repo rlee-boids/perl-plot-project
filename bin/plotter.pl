@@ -29,10 +29,13 @@ die "Missing --output" unless $output;
 my $json_text = read_file($input);
 my $data = decode_json($json_text);
 
+my $graph_options = $data->{graph_options} // {};
+
 my $pg = Plot::Generator->new(
-    title   => $title // "Generated Plot",
-    x_label => $data->{x_label} // "X",
-    y_label => $data->{y_label} // "Y",
+    title         => $title // "Generated Plot",
+    x_label       => $data->{x_label} // "X",
+    y_label       => $data->{y_label} // "Y",
+    graph_options => $graph_options,
 );
 
 $pg->generate(

@@ -1,7 +1,12 @@
 {
   "x": [0, 1, 2, 3, 4, 5],
   "y": [10, 12, 18, 25, 40, 55],
+  "title": "Requests over time",
   "x_label": "Hours",
-  "y_label": "Requests"
+  "y_label": "Requests",
+  "graph_options": {
+    "bgclr": "white",
+    "fgclr": "black",
+    "long_ticks": 1
+  }
 }
-
